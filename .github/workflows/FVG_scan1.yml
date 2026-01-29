@@ -1,0 +1,31 @@
+%%writefile daily_scan.yml
+name: Daily FVG Scanner
+
+on:
+  schedule:
+    # Runs at 13:30 UTC (approx 9:30 AM EST) every Mon-Fri
+    - cron: '30 13 * * 1-5'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Scanner Script
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+        run: python fvg_scanner.py
