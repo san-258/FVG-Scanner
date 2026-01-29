@@ -24,7 +24,7 @@ jobs:
 
       - name: Run Scanner Script
         env:
-          # These MUST match the names you saved in Settings > Secrets > Actions
+          # Left side is what Python looks for, right side is your GitHub Secret name
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
