@@ -24,8 +24,9 @@ jobs:
 
       - name: Run Scanner Script
         env:
-          # Left side is what Python looks for, right side is your GitHub Secret name
-          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          # This maps your GitHub Secret "EMAIL_USERNAME"
+          # to the Python variable "EMAIL_USER"
+          EMAIL_USER: ${{ secrets.EMAIL_USERNAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
         run: python fvg_scanner.py
