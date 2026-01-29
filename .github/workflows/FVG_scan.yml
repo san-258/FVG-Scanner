@@ -23,9 +23,10 @@ jobs:
           pip install pandas requests yfinance
           # If you have a requirements.txt, use: pip install -r requirements.txt
 
-      - name: Run Scanner Script
+     - name: Run Scanner Script
         env:
-          # IMPORTANT: Make sure these names match exactly what you typed in GitHub Secrets
-          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          # This maps GitHub Secrets to the names in your fvg_scanner.py
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
         run: python fvg_scanner.py
