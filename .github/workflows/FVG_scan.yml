@@ -20,12 +20,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas requests yfinance
-          # If you have a requirements.txt, use: pip install -r requirements.txt
+          pip install pandas requests yfinance numpy
 
-     - name: Run Scanner Script
+      - name: Run Scanner Script
         env:
-          # This maps GitHub Secrets to the names in your fvg_scanner.py
+          # These MUST match the names you saved in Settings > Secrets > Actions
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
