@@ -23,8 +23,8 @@ NASDAQ_100 = [
     'CSX', 'ADSK', 'ORLY', 'DASH', 'ABNB', 'NXPI', 'ROP', 'WDAY', 'MNST', 'PCAR',
     'CPRT', 'TTD', 'AEP', 'CHTR', 'PAYX', 'FAST', 'ODFL', 'ROST', 'KDP', 'EA',
     'BKR', 'CTSH', 'VRSK', 'KHC', 'GEHC', 'DDOG', 'EXC', 'LULU', 'XEL', 'CCEP',
-    'TEAM', 'IDXX', 'ZS', 'CSGP', 'TTWO', 'ANSS', 'FANG', 'ON', 'CDW', 'MDB',
-    'DXCM', 'GFS', 'WBD', 'BIIB', 'ILMN', 'WBA', 'MRNA', 'ALGN', 'SMCI', 'DLTR'
+    'TEAM', 'IDXX', 'ZS', 'CSGP', 'TTWO', 'FANG', 'ON', 'CDW', 'MDB',
+    'DXCM', 'GFS', 'WBD', 'BIIB', 'ILMN', 'MRNA', 'ALGN', 'SMCI', 'DLTR'
 ]
 
 # ============================================================================
