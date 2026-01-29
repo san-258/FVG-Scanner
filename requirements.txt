@@ -1,0 +1,4 @@
+%%writefile requirements.txt
+yfinance
+pandas
+numpy
