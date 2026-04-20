@@ -1,5 +1,5 @@
-# NASDAQ 100 FVG SCANNER - Simple & High Quality
-# Scans for UNMITIGATED FVGs with price approaching 50% retracement
+# NASDAQ 100 FVG SCANNER - Optimized Version
+# Scans for UNMITIGATED FVGs with realistic distance criteria
 # Daily Timeframe - Created for Sandip
 
 import yfinance as yf
@@ -22,8 +22,8 @@ NASDAQ_100 = [
     'CSX', 'ADSK', 'ORLY', 'DASH', 'ABNB', 'NXPI', 'ROP', 'WDAY', 'MNST', 'PCAR',
     'CPRT', 'TTD', 'AEP', 'CHTR', 'PAYX', 'FAST', 'ODFL', 'ROST', 'KDP', 'EA',
     'BKR', 'CTSH', 'VRSK', 'KHC', 'GEHC', 'DDOG', 'EXC', 'LULU', 'XEL', 'CCEP',
-    'TEAM', 'IDXX', 'ZS', 'CSGP', 'TTWO', 'ANSS', 'FANG', 'ON', 'CDW', 'MDB',
-    'DXCM', 'GFS', 'WBD', 'BIIB', 'ILMN', 'WBA', 'MRNA', 'ALGN', 'SMCI', 'DLTR'
+    'TEAM', 'IDXX', 'ZS', 'CSGP', 'TTWO', 'FANG', 'ON', 'CDW', 'MDB',
+    'DXCM', 'GFS', 'WBD', 'BIIB', 'ILMN',  'MRNA', 'ALGN', 'SMCI', 'DLTR'
 ]
 
 # ============================================================================
@@ -77,42 +77,25 @@ def detect_high_strength_fvgs(df, min_strength_pct=50):
     return df
 
 def is_fvg_unmitigated(df, fvg_idx, fvg_bottom, fvg_top):
-    """
-    Check if FVG is UNMITIGATED (never been touched by price after formation)
+    """Check if FVG is UNMITIGATED"""
     
-    For Bullish FVG:
-    - Unmitigated = Price LOW never entered the FVG zone after formation
-    - Price can be above, but cannot have wicked down into the gap
-    """
-    
-    # Get all candles AFTER the FVG formation
     candles_after_fvg = df.loc[fvg_idx:].iloc[1:]
     
     if len(candles_after_fvg) == 0:
-        return True  # Just formed, still unmitigated
+        return True
     
     # Check if any candle's LOW touched or entered the FVG zone
-    # For bullish FVG, check if Low went below FVG top (entering the gap)
     touched_fvg = (candles_after_fvg['Low'] <= fvg_top).any()
     
-    # Unmitigated = NOT touched
     return not touched_fvg
 
 def scan_fvg_50_percent_approach(df, ticker):
     """
-    STRICT UNMITIGATED FVG setup scanner:
-    1. HIGH-STRENGTH FVG formed in last 3-10 days (>50% ATR)
-    2. FVG is UNMITIGATED (never touched by price)
-    3. Price MUST have moved above FVG first (creating separation)
-    4. Price NOW retracing back toward 50% level
-    5. Price currently approaching the FVG from above
-    6. Volume confirmation on FVG formation
-    
-    Returns clear Entry, Stop, Target with FVG formation date and levels
+    OPTIMIZED UNMITIGATED FVG setup scanner
     """
     
     latest = df.iloc[-1]
-    recent = df.iloc[-10:]  # Last 10 days
+    recent = df.iloc[-10:]
     
     # Find HIGH-STRENGTH FVGs in recent history
     high_strength_fvgs = recent[recent['High_Strength_FVG'] == True]
@@ -124,7 +107,6 @@ def scan_fvg_50_percent_approach(df, ticker):
     for fvg_idx in reversed(high_strength_fvgs.index):
         fvg_candle = df.loc[fvg_idx]
         
-        # FVG levels
         fvg_top = fvg_candle['Bull_FVG_Top']
         fvg_bottom = fvg_candle['Bull_FVG_Bottom']
         fvg_50_percent = fvg_candle['Bull_FVG_50%']
@@ -135,32 +117,28 @@ def scan_fvg_50_percent_approach(df, ticker):
         fvg_date = fvg_idx.strftime('%Y-%m-%d')
         fvg_date_display = fvg_idx.strftime('%b %d, %Y')
         
-        # Current price position
         current_price = latest['Close']
-        
-        # Days since FVG formation
         days_since_fvg = len(df.loc[fvg_idx:]) - 1
         
         # CRITICAL CHECK: Is FVG UNMITIGATED?
         is_unmitigated = is_fvg_unmitigated(df, fvg_idx, fvg_bottom, fvg_top)
         
         if not is_unmitigated:
-            continue  # Skip this FVG, it's been filled
+            continue
         
-        # STRICT QUALITY FILTERS
+        # OPTIMIZED FILTERS
         
         # 1. FVG must be recent (3-10 days old)
         fvg_age_valid = 3 <= days_since_fvg <= 10
         
-        # 2. Price moved above FVG after formation (confirming the gap and separation)
+        # 2. Price moved above FVG after formation
         candles_after_fvg = df.loc[fvg_idx:].iloc[1:]
         if len(candles_after_fvg) == 0:
             continue
         
-        moved_above_fvg = candles_after_fvg['High'].max() > fvg_top * 1.02  # At least 2% above
+        moved_above_fvg = candles_after_fvg['High'].max() > fvg_top * 1.02
         
-        # 3. Price NOW approaching FVG from above
-        # Price must be above the FVG top but showing signs of retracement
+        # 3. Price NOW above FVG
         above_fvg = current_price > fvg_top
         
         # 4. Price is retracing (came down from recent high)
@@ -168,17 +146,17 @@ def scan_fvg_50_percent_approach(df, ticker):
         recent_high_date = candles_after_fvg.loc[candles_after_fvg['High'] == recent_high].index[0]
         recent_high_date_display = recent_high_date.strftime('%b %d, %Y')
         
-        is_retracing = current_price < recent_high * 0.98  # At least 2% down from high
+        is_retracing = current_price < recent_high * 0.98
         
-        # 5. Price is approaching the FVG (within reasonable distance)
+        # 5. RELAXED: Price approaching FVG (within 10% instead of 3%)
         distance_to_fvg_top = current_price - fvg_top
         distance_to_fvg_top_pct = (distance_to_fvg_top / current_price) * 100
-        approaching_fvg = distance_to_fvg_top_pct <= 3.0  # Within 3% of FVG top
+        approaching_fvg = distance_to_fvg_top_pct <= 10.0  # CHANGED FROM 3.0 to 10.0
         
-        # 6. Volume confirmation on FVG formation day
+        # 6. Volume confirmation
         volume_confirmed = fvg_candle['Volume_Ratio'] > 1.3
         
-        # CHECK ALL CONDITIONS (ALL MUST BE TRUE)
+        # CHECK ALL CONDITIONS
         if (fvg_age_valid and moved_above_fvg and above_fvg and 
             is_retracing and approaching_fvg):
             
@@ -186,10 +164,10 @@ def scan_fvg_50_percent_approach(df, ticker):
             distance_to_50 = abs(current_price - fvg_50_percent)
             distance_to_50_pct = (distance_to_50 / fvg_50_percent) * 100
             
-            # TRADE SETUP - Clear Cut
-            entry = fvg_50_percent  # Enter at 50% FVG retracement
-            stop_loss = fvg_bottom * 0.995  # Just below FVG bottom
-            target = recent_high  # Target is recent high (conservative)
+            # TRADE SETUP
+            entry = fvg_50_percent
+            stop_loss = fvg_bottom * 0.995
+            target = recent_high
             
             risk = entry - stop_loss
             reward = target - entry
@@ -199,9 +177,9 @@ def scan_fvg_50_percent_approach(df, ticker):
             if risk_reward < 1.5:
                 continue
             
-            # Position sizing based on risk
+            # Position sizing
             atr = latest['ATR']
-            position_risk_dollars = 100  # Risk $100 per trade
+            position_risk_dollars = 100
             shares = int(position_risk_dollars / risk) if risk > 0 else 0
             
             return {
@@ -223,13 +201,13 @@ def scan_fvg_50_percent_approach(df, ticker):
                 'R:R': round(risk_reward, 2),
                 'Shares': shares,
                 'Distance_to_FVG_Top_%': round(distance_to_fvg_top_pct, 2),
-                'Distance_to_50%_$': round(distance_to_50, 2),
+                'Distance_to_Entry_%': round(distance_to_50_pct, 2),
                 'Recent_High': round(recent_high, 2),
                 'Recent_High_Date': recent_high_date_display,
                 'Volume_on_FVG': round(fvg_candle['Volume_Ratio'], 2),
                 'ATR': round(atr, 2),
                 'FVG_Status': 'UNMITIGATED',
-                'Setup_Quality': 'EXCELLENT' if volume_confirmed and fvg_strength > 60 and distance_to_fvg_top_pct < 1.5 else 'GOOD'
+                'Setup_Quality': 'EXCELLENT' if volume_confirmed and fvg_strength > 60 and distance_to_fvg_top_pct < 3.0 else 'GOOD'
             }
     
     return None
@@ -239,11 +217,11 @@ def scan_fvg_50_percent_approach(df, ticker):
 # ============================================================================
 
 def run_fvg_scanner():
-    """Simple FVG Scanner - UNMITIGATED FVGs Only"""
+    """FVG Scanner - UNMITIGATED FVGs with Optimized Filters"""
     
     print("=" * 100)
     print("NASDAQ 100 FVG SCANNER - Daily Timeframe")
-    print("Scanning for UNMITIGATED HIGH-STRENGTH FVGs with price approaching from above")
+    print("Scanning for UNMITIGATED HIGH-STRENGTH FVGs (Optimized Filters)")
     print(f"Scan Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 100)
     print()
@@ -253,16 +231,13 @@ def run_fvg_scanner():
     for i, ticker in enumerate(NASDAQ_100, 1):
         print(f"Scanning {i}/{len(NASDAQ_100)}: {ticker}...", end='\r')
         
-        # Fetch data
         df = fetch_data(ticker, period='6mo', interval='1d')
         if df is None:
             continue
         
-        # Calculate indicators
         df = calculate_indicators(df)
         df = detect_high_strength_fvgs(df, min_strength_pct=50)
         
-        # Scan for setup
         signal = scan_fvg_50_percent_approach(df, ticker)
         if signal:
             signals.append(signal)
@@ -274,9 +249,9 @@ def run_fvg_scanner():
     
     if len(signals) > 0:
         results_df = pd.DataFrame(signals)
-        results_df = results_df.sort_values('Distance_to_FVG_Top_%', ascending=True)  # Closest to FVG first
+        results_df = results_df.sort_values('Distance_to_FVG_Top_%', ascending=True)
         
-        # Display results - Main Summary Table
+        # Display results
         print("\n" + "=" * 100)
         print("UNMITIGATED FVG SETUPS - SUMMARY TABLE")
         print("=" * 100)
@@ -284,13 +259,13 @@ def run_fvg_scanner():
         
         summary_cols = [
             'Ticker', 'Current_Price', 'FVG_Formed_Date', 'Days_Since_FVG',
-            'FVG_Top', 'FVG_50%', 'FVG_Bottom', 'Entry', 'Stop_Loss', 'Target', 'R:R', 'Setup_Quality'
+            'FVG_Top', 'FVG_50%', 'FVG_Bottom', 'Entry', 'Stop_Loss', 'Target', 'R:R', 'Distance_to_FVG_Top_%'
         ]
         print(results_df[summary_cols].to_string(index=False))
         
-        # Detailed breakdown for each setup
+        # Detailed breakdown
         print("\n" + "=" * 100)
-        print("DETAILED BREAKDOWN - EACH SETUP")
+        print("DETAILED BREAKDOWN")
         print("=" * 100)
         
         for idx, row in results_df.iterrows():
@@ -298,71 +273,39 @@ def run_fvg_scanner():
             print(f"TICKER: {row['Ticker']} - {row['Setup_Quality']} SETUP ({row['FVG_Status']})")
             print(f"{'='*100}")
             print(f"CURRENT PRICE: ${row['Current_Price']}")
-            print(f"DISTANCE TO FVG TOP: {row['Distance_to_FVG_Top_%']:.2f}% (Price approaching from above)")
+            print(f"DISTANCE TO FVG TOP: {row['Distance_to_FVG_Top_%']:.2f}% (Price retracing from above)")
             print()
             
             print(f"FVG FORMATION DETAILS:")
             print(f"  Date Formed:  {row['FVG_Formed_Display']} ({row['Days_Since_FVG']} days ago)")
-            print(f"  FVG Top:      ${row['FVG_Top']:.2f}  <- Price never touched this level since formation")
+            print(f"  FVG Top:      ${row['FVG_Top']:.2f}  <- Price never touched this level")
             print(f"  FVG 50%:      ${row['FVG_50%']:.2f}  <- ENTRY LEVEL (Consequent Encroachment)")
             print(f"  FVG Bottom:   ${row['FVG_Bottom']:.2f}")
             print(f"  FVG Height:   ${row['FVG_Height_$']:.2f}")
-            print(f"  Strength:     {row['FVG_Strength_%']:.1f}% of ATR (HIGH-STRENGTH institutional displacement)")
-            print(f"  Status:       {row['FVG_Status']} (pristine - never been touched)")
-            print(f"  Volume:       {row['Volume_on_FVG']:.2f}x average on formation day")
+            print(f"  Strength:     {row['FVG_Strength_%']:.1f}% of ATR (HIGH-STRENGTH)")
+            print(f"  Status:       {row['FVG_Status']}")
             print()
             
             print(f"TRADE PLAN:")
-            print(f"  Entry:        ${row['Entry']:.2f}  (50% FVG Retracement)")
-            print(f"  Stop Loss:    ${row['Stop_Loss']:.2f}  (Below FVG bottom)")
+            print(f"  Entry:        ${row['Entry']:.2f}  (50% FVG level)")
+            print(f"  Stop Loss:    ${row['Stop_Loss']:.2f}  (Below FVG)")
             print(f"  Target:       ${row['Target']:.2f}  (Recent high)")
             print(f"  Risk:         ${row['Risk_$']:.2f} per share")
             print(f"  Reward:       ${row['Reward_$']:.2f} per share")
             print(f"  R:R Ratio:    {row['R:R']:.2f}:1")
-            print(f"  Position:     {row['Shares']} shares (based on $100 risk)")
-            print()
-            
-            print(f"PRICE ACTION TIMELINE:")
-            print(f"  {row['FVG_Formed_Display']}:  FVG formed - Gap created between ${row['FVG_Bottom']:.2f} and ${row['FVG_Top']:.2f}")
-            print(f"  {row['Recent_High_Date']}:  Price rallied to ${row['Recent_High']:.2f} (recent high)")
-            print(f"  Since then:    Price stayed ABOVE FVG (never touched - still UNMITIGATED)")
-            print(f"  Today:         Price retracing, currently at ${row['Current_Price']:.2f}")
-            print(f"  Next:          Waiting for price to reach ${row['Entry']:.2f} (50% FVG level) for entry")
-            print()
-            
-            print(f"WHY THIS SETUP QUALIFIES:")
-            print(f"  1. HIGH-STRENGTH FVG ({row['FVG_Strength_%']:.1f}% of ATR) = Institutional displacement")
-            print(f"  2. FVG is UNMITIGATED (price never touched the gap - still pristine)")
-            print(f"  3. FVG formed {row['Days_Since_FVG']} days ago (recent and relevant)")
-            print(f"  4. Price moved above FVG (to ${row['Recent_High']:.2f}), creating separation")
-            print(f"  5. Price NOW retracing back from above (current: ${row['Current_Price']:.2f})")
-            print(f"  6. Price approaching FVG top ({row['Distance_to_FVG_Top_%']:.2f}% away)")
-            print(f"  7. Entry at 50% level (${row['Entry']:.2f}) offers {row['R:R']:.2f}:1 R:R")
+            print(f"  Position:     {row['Shares']} shares ($100 risk)")
         
-        # Summary Statistics
+        # Summary
         print("\n" + "=" * 100)
-        print("SUMMARY STATISTICS")
+        print("SUMMARY")
         print("=" * 100)
-        print(f"Total Setups Found: {len(signals)}")
-        print(f"All FVGs are UNMITIGATED (never been touched)")
-        print(f"Excellent Setups: {len(results_df[results_df['Setup_Quality'] == 'EXCELLENT'])}")
-        print(f"Good Setups: {len(results_df[results_df['Setup_Quality'] == 'GOOD'])}")
+        print(f"Total Setups: {len(signals)}")
         print(f"Average R:R: {results_df['R:R'].mean():.2f}:1")
-        print(f"Best R:R: {results_df['R:R'].max():.2f}:1 ({results_df.loc[results_df['R:R'].idxmax(), 'Ticker']})")
-        print(f"Closest to FVG: {results_df.iloc[0]['Ticker']} ({results_df.iloc[0]['Distance_to_FVG_Top_%']:.2f}% away)")
         print(f"Average FVG Strength: {results_df['FVG_Strength_%'].mean():.1f}% of ATR")
-        print(f"Average Days Since FVG: {results_df['Days_Since_FVG'].mean():.1f} days")
         
         return results_df
     else:
-        print("No UNMITIGATED FVG setups found.")
-        print("\nThis means:")
-        print("  - No HIGH-STRENGTH FVGs (>50% ATR) formed in last 3-10 days, OR")
-        print("  - FVGs have been filled/mitigated (price touched them), OR")
-        print("  - Price not retracing back to FVG from above")
-        print("\nThis is GOOD - we're being extremely selective!")
-        print("Only PRISTINE, UNMITIGATED FVGs qualify.")
-        print("Check back tomorrow for new setups!")
+        print("No setups found today.")
         return pd.DataFrame()
 
 # ============================================================================
@@ -372,8 +315,7 @@ def run_fvg_scanner():
 if __name__ == "__main__":
     results = run_fvg_scanner()
     
-    # Save to CSV
     if len(results) > 0:
-        filename = f"fvg_unmitigated_setups_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        filename = f"fvg_setups_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         results.to_csv(filename, index=False)
         print(f"\nResults saved to: {filename}")
