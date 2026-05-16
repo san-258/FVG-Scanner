@@ -23,10 +23,19 @@ jobs:
           pip install pandas requests yfinance numpy
 
       - name: Run Scanner Script
-        env:
-          # This maps your GitHub Secret "EMAIL_USERNAME"
-          # to the Python variable "EMAIL_USER"
-          EMAIL_USER: ${{ secrets.EMAIL_USERNAME }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
-        run: python fvg_scanner.py
+        run: |
+        # Run your FVG script and print everything into a standard report file
+        python fvg_scanner.py > daily_fvg_report.txt
+
+    - name: Send Daily FVG Email Notification
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.MAIL_USERNAME }}
+        password: ${{ secrets.MAIL_PASSWORD }}
+        subject: "Daily FVG Market Scan Results"
+        to: stocks.scanner0@gmail.com # Swap this with your real email address
+        from: GitHub FVG Scanner
+        # Reads the text output file directly to preserve the tables perfectly
+        body: file://daily_fvg_report.txt
