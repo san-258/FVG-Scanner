@@ -40,4 +40,4 @@ jobs:
           from: GitHub FVG Scanner
           body: file://daily_fvg_report.txt
           name: Keep Workflow Active
-         uses: gautamkrishnar/keepalive-workflow@v2
+          uses: gautamkrishnar/keepalive-workflow@v2
