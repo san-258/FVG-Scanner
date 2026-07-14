@@ -39,3 +39,5 @@ jobs:
           to: stocks.scanner0@gmail.com
           from: GitHub FVG Scanner
           body: file://daily_fvg_report.txt
+          - name: Keep Workflow Active
+        uses: gautamkrishnar/keepalive-workflow@v2
