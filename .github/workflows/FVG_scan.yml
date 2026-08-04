@@ -3,7 +3,7 @@ name: Daily FVG Scanner
 on:
   schedule:
     # This triggers at 7:30 PM NYC Time (EDT)
-    - cron: '30 23 * * 1-5'
+    - cron: '17 23 * * 1-5'
   workflow_dispatch: # Allows manual trigger
 
 jobs:
